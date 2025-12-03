@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -12,12 +11,15 @@ import (
 var assets embed.FS
 
 func main() {
+	go func() {
+		Server()
+	}()
 	// Create an instance of the app structure
 	app := NewApp()
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "myproject",
+		Title:  "专属postman",
 		Width:  1024,
 		Height: 768,
 		AssetServer: &assetserver.Options{
