@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket测试工具 - 二级目录管理-index1</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://github.com/inexorabletash/text-encoding/blob/master/lib/encoding.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --folder-color: #4895ef;
+            --request-color: #7209b7;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+            --dark-color: #2b2d42;
+            --light-color: #f8f9fa;
+            --sidebar-width: 280px;
+            --header-height: 50px;
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /*body {*/
+        /*    display: flex;*/
+        /*    height: 100vh;*/
+        /*    background: linear-gradient(135deg, #1d2b64, #2c3e50);*/
+        /*    color: #333;*/
+        /*    overflow: hidden;*/
+        /*}*/
+
+        /* 侧边栏样式 - 紧凑设计 */
+        .sidebar {
+        //width: var(--sidebar-width);
+            background: rgba(255, 255, 255, 0.95);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            transition: var(--transition);
+            overflow: hidden;
+            float:left;
+            height: 100vh;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-title i {
+            font-size: 1.4rem;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border-radius: 50px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            font-size: 0.9rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section-title h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .add-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .add-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .collection-list {
+            list-style: none;
+            max-height: calc(100vh - 250px);
+            overflow-y: auto;
+        }
+
+        /* 目录样式 */
+        .folder {
+            margin-bottom: 8px;
+            border-radius: var(--border-radius);
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .folder-header {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(72, 149, 239, 0.1);
+        }
+
+        .folder-header:hover {
+            background: rgba(72, 149, 239, 0.2);
+        }
+
+        .folder-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--folder-color);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .folder-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            flex: 1;
+        }
+
+        .folder-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .folder-action-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .folder-action-btn:hover {
+            background: #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        .folder-content {
+            padding: 0 10px 10px 40px;
+            display: none;
+        }
+
+        .folder.expanded .folder-content {
+            display: block;
+        }
+
+        .collection-item {
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: var(--transition);
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+        }
+
+        .collection-item:hover {
+            background: #e3f2fd;
+            border-color: #bbdefb;
+        }
+
+        .collection-item.active {
+            background: #d1e8ff;
+            border-color: var(--primary-color);
+        }
+
+        .collection-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--request-color);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .collection-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .collection-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+
+        .collection-url {
+            font-size: 0.75rem;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .collection-actions {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .collection-item:hover .collection-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 0.8rem;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .action-btn:hover {
+            background: #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        /* 主内容区域 - 紧凑设计 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 15px;
+        }
+
+        .header {
+            height: var(--header-height);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .app-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .app-title i {
+            font-size: 1.5rem;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8f9fa;
+            padding: 6px 15px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e74c3c;
+        }
+
+        .status-indicator.connected {
+            background: #2ecc71;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .toolbar-btn {
+            padding: 8px 15px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .toolbar-btn.disconnect {
+            background: var(--danger-color);
+        }
+
+        .toolbar-btn.disconnect:hover {
+            background: #d81b60;
+        }
+
+        /* 内容区域 - 针对10:9屏幕优化 */
+        .content-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 50%;
+        }
+
+        .panel-header {
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-body {
+            flex: 1;
+            padding: 15px;
+            overflow: auto;
+        }
+
+        .connection-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .btn-block {
+            width: 100%;
+            padding: 10px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.95rem;
+        }
+
+        .btn-block:hover {
+            background: var(--secondary-color);
+        }
+
+        .messages-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .message-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            background: #f8f9fa;
+        //max-height: 30vh;
+        }
+
+        .message {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            max-width: 85%;
+            word-wrap: break-word;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .message.sent {
+            background: #e3f2fd;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+        }
+
+        .message.received {
+            background: #f1f1f1;
+            margin-right: auto;
+            border-bottom-left-radius: 0;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .message-content {
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .message-input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .input-options {
+            display: flex;
+            gap: 5px;
+        }
+
+        .input-option-btn {
+            background: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-option-btn:hover {
+            background: #e9ecef;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .send-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #messageType {
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+        }
+
+        .send-btn {
+            padding: 12px 25px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .send-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        /* 历史消息样式 */
+        .history-item {
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .history-item:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .history-item-content {
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .empty-history {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+
+        /* 空状态样式 */
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #e9ecef;
+            margin-bottom: 15px;
+        }
+
+        .empty-state p {
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 滚动条优化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+<script src="./src/main.js" type="module"></script>
+<script>
+    let folders = [];
+    let golbalFeilds = {};
+    function setGolbalFeilds(params) {
+        golbalFeilds = params
+    }
+    function setFolders(params) {
+        folders = params
+    }
+    $(document).ready(function() {
+        // 状态变量
+        let socket = null;
+        let ws = null;
+        let currentConfigId = null;
+        const STORAGE_KEY = 'websocket_configs';
+
+        // 目录和请求数据
+        /*let folders = [
+            {
+                id: 'folder1',
+                name: '测试目录',
+                expanded: true,
+                requests: [
+                    {
+                        id: 'req1',
+                        name: '测试请求',
+                        url: 'wss://echo.websocket.org',
+                        active: true
+                    }
+                ]
+            },
+            {
+                id: 'folder2',
+                name: '聊天服务',
+                expanded: false,
+                requests: [
+                    {
+                        id: 'req2',
+                        name: '主聊天室',
+                        url: 'wss://chat.example.com/main',
+                        active: false
+                    }
+                ]
+            }
+        ];*/
+
+        function httpSave(data) {
+            $.ajax({
+                url: "http://localhost:8089/save",
+                type: 'POST',
+                async:false,
+                contentType: 'application/json', // 指定发送数据类型为 JSON
+                dataType: 'json', // 期望服务器返回 JSON
+                data: JSON.stringify(data),
+                success: function(data) {
+                    alert('suc...')
+                    window.location.reload();
+                }
+            });
+        }
+
+        // 获取所有全局变量
+        function getAllGlobalVariables() {
+            $.ajax({
+                url: "http://localhost:8089/getGlobalFeild",
+                type: 'POST',
+                async:false,
+                contentType: 'application/json', // 指定发送数据类型为 JSON
+                dataType: 'json', // 期望服务器返回 JSON
+                data: JSON.stringify({ // 将 JS 对象转为 JSON 字符串
+                }),
+                success: function(data) {
+                    setGolbalFeilds(data)
+                    if(data.length > 0) {
+                        for (i in data) {
+                            $('#globalFeildModal .modal-body').append('<div class="form-group">\n' +
+                                '                <label for="folderName">参数名&nbsp;参数值</label>\n' +
+                                '                <input type="text" class="paramName" class="form-control" value="' + data[i].Field + '" placeholder="输入参数名">\n' +
+                                '                <input type="text" class="paramValue" class="form-control" value="' + data[i].Value + '" placeholder="输入值">\n' +
+                                '            </div>')
+                        }
+                    }
+                    //window.location.reload();
+                }
+            });
+        }
+
+        getAllGlobalVariables()
+
+        //获取目录列表
+        $.ajax({
+            url: "http://localhost:8089/getDirList",
+            type: 'POST',
+            async:false,
+            contentType: 'application/json', // 指定发送数据类型为 JSON
+            dataType: 'json', // 期望服务器返回 JSON
+            data: JSON.stringify({ // 将 JS 对象转为 JSON 字符串
+            }),
+            success: function(data) {
+                setFolders(data)
+                console.log("getDirList: " + folders)
+            }
+        });
+
+        console.log(folders)
+
+        // DOM 元素
+        const $collectionList = $('#collectionList');
+        const $statusIndicator = $('#statusIndicator');
+        const $statusText = $('#statusText');
+        const $connectBtn = $('#connectBtn');
+        const $disconnectBtn = $('#disconnectBtn');
+        const $messageHistory = $('#messageHistory');
+        const $emptyMessageState = $('#emptyMessageState');
+        const $folderModal = $('#folderModal');
+        const $requestModal = $('#requestModal');
+        const $parentFolder = $('#parentFolder');
+        const $globalFeildModal = $('#addGlobalFeild');
+
+        // 初始化
+        renderFolderStructure();
+
+        // 添加日志消息
+        function addLog(message, type = 'system') {
+            const $message = $(`
+                        <div class="message sent">
+                            <div class="message-header">
+                                <span>我</span>
+                                <span>${new Date().toLocaleTimeString()}</span>
+                            </div>
+                            <div class="message-content">${message}</div>
+                        </div>
+                    `);
+
+            $('#messageHistory').append($message);
+            $emptyMessageState.hide();
+            //$('#messageInput').val('');
+            $('#messageHistory').scrollTop($('#messageHistory')[0].scrollHeight);
+
+        }
+
+
+        function isBlob(data) {
+            return data instanceof Blob ||
+                Object.prototype.toString.call(data) === '[object Blob]';
+        }
+
+        // 连接 WebSocket
+        async function connect() {
+            const url = $('#wsUrl').val();
+            console.log("url: " + url);
+
+            try {
+                socket = new WebSocket(url);
+
+                // 事件监听
+                socket.onopen = () => {
+                    console.log("握手成功")
+                    addLog('握手成功', 'system');
+                }
+
+
+                socket.onmessage = (event) => {
+                    try {
+                        //const data = JSON.parse(event.data);
+                        if(isBlob(event.data) == true){
+                            var fileReader = new FileReader(); // 用filereader来转blob为arraybuffer
+                            fileReader.onload = function() {
+                                var arrayBuffer = this.result; // 得到arraybuffer
+                                var decoder = new TextDecoder('utf-8') // 上面回复中给的encoding.js、encoding-indexes.js
+                                var json = JSON.parse(decoder.decode(new DataView(arrayBuffer)))
+                                addLog(JSON.stringify(json))
+                                console.log("isBlob", JSON.stringify(json))
+                                saveMessageToHistory(JSON.stringify(json));
+                            };
+                            fileReader.readAsArrayBuffer(event.data); // 此处读取blob
+                        } else {
+                            addLog(event.data);
+                            console.log("isBlob1111", JSON.stringify(json))
+                            saveMessageToHistory(event.data); // 添加这行，保存收到
+                        }
+
+                    } catch (e) {
+                        addLog(event.data, 'received');
+                        console.log("isBlob2222", JSON.stringify(json))
+                        saveMessageToHistory(event.data); // 添加这行，即使解析出错也保存
+                    }
+                };
+
+                socket.onclose = (event) => {
+                    console.log("连接关闭")
+                    addLog(`连接关闭 [${event.code}]: ${event.reason}`, 'system');
+                    $('#disconnectBtn').click()
+                };
+
+                socket.onerror = (error) => {
+                    addLog(`错误: ${error.message}`, 'error');
+
+                };
+            } catch (error) {
+                addLog(`连接失败: ${error.message}`, 'error');
+            }
+        }
+
+
+
+        // 发送消息增强版
+        function sendMessage() {
+            const content = $('#messageInput').val();
+            const messageType = $('#messageType').val();
+
+            if (!content) return;
+
+            // 替换全局变量
+            let replaceContent = content;
+            if(golbalFeilds.length > 0) {
+                for(let i in golbalFeilds) {
+                    let key = '{{' + golbalFeilds[i].Field+ '}}';
+                    let value = golbalFeilds[i].Value;
+                    replaceContent = replaceContent.replaceAll(key, value);
+                }
+            }
+
+            try {
+                // 根据不同类型发送消息
+                switch(messageType) {
+                    case 'text':
+                        socket.send(replaceContent);
+                        break;
+                    case 'json':
+                        // 验证是否为有效JSON
+                        JSON.parse(replaceContent);
+                        socket.send(replaceContent);
+                        break;
+                    case 'binary':
+                        // 发送二进制数据
+                        const buffer = new TextEncoder().encode(replaceContent);
+                        socket.send(buffer);
+                        break;
+                }
+
+                addLog(replaceContent, 'sent');
+                saveMessageToHistory(content); // 保存到历史记录
+
+                // 清空输入框或保持内容（根据用户设置）
+                // $('#messageInput').val('');
+
+                const addr = $('#wsUrl').val();
+                httpSave({
+                    addr: addr,
+                    content: content,
+                });
+
+            } catch (error) {
+                addLog(`发送失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 保存消息到历史记录
+        function saveMessageToHistory(message) {
+            console.log("saveMessageToHistory-", message)
+            let history = localStorage.getItem('ws_message_history');
+            history = history ? JSON.parse(history) : [];
+
+            // 限制历史记录数量为100条
+            if (history.length >= 100) {
+                history = history.slice(-99); // 保留最新的99条
+            }
+
+            history.push({
+                message: message,
+                timestamp: new Date().toISOString()
+            });
+
+            localStorage.setItem('ws_message_history', JSON.stringify(history));
+        }
+
+        // 格式化 JSON 消息
+        $('#formatJsonBtn').click(function() {
+            const content = $('#messageInput').val();
+            if (!content) return;
+
+            try {
+                const formatted = JSON.stringify(JSON.parse(content), null, 2);
+                $('#messageInput').val(formatted);
+            } catch (e) {
+                alert('无效的JSON格式');
+            }
+        });
+
+        // 显示历史消息模态框
+        $('#historyMessagesBtn').click(function() {
+            loadHistoryMessages();
+            $('#historyModal').show();
+        });
+
+        // 关闭历史消息模态框
+        $('#closeHistoryBtn').click(function() {
+            $('#historyModal').hide();
+        });
+
+        // 清空历史消息
+        $('#clearHistoryBtn').click(function() {
+            if (confirm('确定要清空所有历史消息吗？')) {
+                localStorage.removeItem('ws_message_history');
+                loadHistoryMessages(); // 重新加载显示空状态
+                showNotification('历史消息已清空');
+            }
+        });
+
+        // 加载历史消息
+        function loadHistoryMessages() {
+            const $historyList = $('#historyList');
+            $historyList.empty();
+
+            let history = localStorage.getItem('ws_message_history');
+            history = history ? JSON.parse(history) : [];
+
+            if (history.length === 0) {
+                $historyList.append(`
+                    <div class="empty-history">
+                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>暂无历史消息</p>
+                    </div>
+                `);
+                return;
+            }
+
+            // 按时间倒序排列（最新的在前面）
+            history.reverse();
+
+            history.forEach((item, index) => {
+                const timestamp = new Date(item.timestamp).toLocaleString();
+                const content = item.message.length > 100
+                    ? item.message.substring(0, 100) + '...'
+                    : item.message;
+
+                const $historyItem = $(`
+                    <div class="history-item" data-index="${index}">
+                        <div class="history-item-header">
+                            <span>${timestamp}</span>
+                            <span>#${history.length - index}</span>
+                        </div>
+                        <div class="history-item-content" title="${item.message}">
+                            ${content}
+                        </div>
+                    </div>
+                `);
+
+                // 点击历史消息项，将其填入输入框
+                $historyItem.click(function() {
+                    $('#messageInput').val(item.message);
+                    $('#historyModal').hide();
+                });
+
+                $historyList.append($historyItem);
+            });
+        }
+
+
+        function isBlob(data) {
+            return data instanceof Blob ||
+                Object.prototype.toString.call(data) === '[object Blob]';
+        }
+
+        // 连接 WebSocket
+        async function connect() {
+            const url = $('#wsUrl').val();
+            console.log("url: " + url);
+
+            try {
+                socket = new WebSocket(url);
+
+                // 事件监听
+                socket.onopen = () => {
+                    console.log("握手成功")
+                    addLog('握手成功', 'system');
+                }
+
+
+                socket.onmessage = (event) => {
+                    try {
+                        //const data = JSON.parse(event.data);
+                        if(isBlob(event.data) == true){
+                            var fileReader = new FileReader(); // 用filereader来转blob为arraybuffer
+                            fileReader.onload = function() {
+                                var arrayBuffer = this.result; // 得到arraybuffer
+                                var decoder = new TextDecoder('utf-8') // 上面回复中给的encoding.js、encoding-indexes.js
+                                var json = JSON.parse(decoder.decode(new DataView(arrayBuffer)))
+                                addLog(JSON.stringify(json))
+                            };
+                            fileReader.readAsArrayBuffer(event.data); // 此处读取blob
+                        } else {
+                            addLog(event.data);
+                        }
+
+                    } catch (e) {
+                        addLog(event.data, 'received');
+                    }
+                };
+
+                socket.onclose = (event) => {
+                    console.log("连接关闭")
+                    addLog(`连接关闭 [${event.code}]: ${event.reason}`, 'system');
+                    $('#disconnectBtn').click()
+                };
+
+                socket.onerror = (error) => {
+                    addLog(`错误: ${error.message}`, 'error');
+
+                };
+            } catch (error) {
+                addLog(`连接失败: ${error.message}`, 'error');
+            }
+        }
+
+
+
+        // 渲染目录结构
+        function renderFolderStructure() {
+            $collectionList.empty();
+
+            if (folders.length === 0) {
+                $collectionList.append(`
+                        <div class="empty-state" style="padding: 20px;">
+                            <i class="fas fa-inbox"></i>
+                            <p>没有目录或请求</p>
+                        </div>
+                    `);
+                return;
+            }
+
+            folders.forEach(folder => {
+                const $folder = $(`
+                        <li class="folder ${folder.expanded ? 'expanded' : ''}">
+                            <div class="folder-header">
+                                <div class="folder-icon">
+                                    <i class="fas fa-folder"></i>
+                                </div>
+                                <div class="folder-name">(${folder.childNum})${folder.name}</div>
+                                <div class="folder-actions">
+                                    <button class="folder-action-btn add-request" title="添加请求">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="folder-action-btn" title="编辑目录">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="folder-action-btn" title="删除目录">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="folder-content">
+                                <!-- 请求将在这里渲染 -->
+                            </div>
+                        </li>
+                    `);
+
+                // 添加请求按钮
+                $folder.find('.add-request').click(function(e) {
+                    e.stopPropagation();
+                    openRequestModal(folder.id);
+                });
+
+                // 展开/折叠目录
+                $folder.find('.folder-header').click(function() {
+                    folder.expanded = !folder.expanded;
+                    renderFolderStructure();
+                });
+
+                // 编辑目录
+                $folder.find('.fa-edit').parent().click(function(e) {
+                    e.stopPropagation();
+                    openFolderModal(folder);
+                });
+
+                // 删除目录
+                $folder.find('.fa-trash').parent().click(function(e) {
+                    e.stopPropagation();
+                    if (confirm(`确定要删除目录 "${folder.name}" 及其所有请求吗？`)) {
+                        folders = folders.filter(f => f.id !== folder.id);
+                        renderFolderStructure();
+
+                        $.ajax({
+                            url: "http://localhost:8089/delDir",
+                            type: 'POST',
+                            contentType: 'application/json', // 指定发送数据类型为 JSON
+                            dataType: 'json', // 期望服务器返回 JSON
+                            data: JSON.stringify({ // 将 JS 对象转为 JSON 字符串
+                                id:parseInt(folder.id)
+                            }),
+                            success: function(data) {
+                                alert('suc...');
+                                window.location.reload();
+                            }
+                        });
+                    }
+
+
+                });
+
+                // 渲染目录中的请求
+                const $folderContent = $folder.find('.folder-content');
+                if (folder.requests != null ){
+                    folder.requests.forEach(request => {
+                        const $request = $(`
+                            <div class="collection-item ${request.active ? 'active' : ''}" data-id="${request.id}">
+                                <div class="collection-icon">
+                                    <i class="fas fa-plug"></i>
+                                </div>
+                                <div class="collection-details">
+                                    <div class="collection-name">${request.name}</div>
+                                    <div class="collection-url">${request.url}</div>
+                                </div>
+                                <div class="collection-actions">
+                                    <button class="action-btn edit-request" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="action-btn delete-request" title="删除">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+
+                        // 请求点击事件
+                        $request.click(function() {
+                            // 设置当前活动请求
+                            folders.forEach(f => {
+                                f.requests.forEach(r => {
+                                    r.active = (r.id === request.id);
+                                });
+                            });
+
+                            renderFolderStructure();
+                            loadRequestConfig(request, folder);
+                        });
+
+                        // 编辑请求
+                        $request.find('.edit-request').click(function(e) {
+                            e.stopPropagation();
+                            openRequestModal(folder.id, request);
+                        });
+
+                        // 删除请求
+                        $request.find('.delete-request').click(function(e) {
+                            e.stopPropagation();
+                            if (confirm(`确定要删除请求 "${request.name}" 吗？`)) {
+                                folder.requests = folder.requests.filter(r => r.id !== request.id);
+                                renderFolderStructure();
+                            }
+
+                            $.ajax({
+                                url: "http://localhost:8089/delRequest",
+                                type: 'POST',
+                                contentType: 'application/json', // 指定发送数据类型为 JSON
+                                dataType: 'json', // 期望服务器返回 JSON
+                                data: JSON.stringify({ // 将 JS 对象转为 JSON 字符串
+                                    id: parseInt(request.id),
+                                }),
+                                success: function(data) {
+                                    alert('suc...');
+                                    window.location.reload();
+                                }
+                            });
+                        });
+
+                        $folderContent.append($request);
+                    });
+                }
+
+
+                $collectionList.append($folder);
+            });
+
+            // 添加父目录选项
+            updateParentFolderOptions();
+        }
+
+        // 打开添加目录模态框
+        function openFolderModal(folder = null) {
+            if (folder) {
+                $('#folderName').attr('folderId', folder.id);
+                $('#folderName').val(folder.name);
+            } else {
+                $('#folderName').val('');
+            }
+            $folderModal.show();
+        }
+
+        // 打开添加全局变量模态框
+        function openGlobalFeildModal() {
+            $('#globalFeildModal').show();
+        }
+
+        // 打开添加请求模态框
+        function openRequestModal(folderId, request = null) {
+            if (request) {
+                $('#requestName').val(request.name);
+                $('#requestUrl').val(request.url);
+                $('#parentFolder').val(folderId);
+            } else {
+                $('#requestName').val('');
+                $('#requestUrl').val('');
+                $('#parentFolder').val(folderId);
+            }
+            $requestModal.show();
+        }
+
+        // 更新父目录选项
+        function updateParentFolderOptions() {
+            $parentFolder.empty();
+            $parentFolder.append('<option value="">无 (顶级目录)</option>');
+            folders.forEach(folder => {
+                $parentFolder.append(`<option value="${folder.id}">${folder.name}</option>`);
+            });
+        }
+
+        // 保存全局参数
+        $('#saveGlobalFeild').click(function() {
+            var params = [];
+            $('#globalFeildModal .form-group').each(function(i) {
+                const paramName = $(this).find('.paramName').val();
+                if (!paramName) {
+                    alert('请输入参数名');
+                    return;
+                }
+                const paramValue = $(this).find('.paramValue').val();
+                if (!paramValue) {
+                    alert('请输入参数值');
+                    return;
+                }
+                params.push({ // 将 JS 对象转为 JSON 字符串
+                    name:paramName,
+                    value:paramValue,
+                })
+            })
+
+            if(params.length > 0) {
+                $.ajax({
+                    url: "http://localhost:8089/saveGlobalFeild",
+                    type: 'POST',
+                    contentType: 'application/json', // 指定发送数据类型为 JSON
+                    dataType: 'json', // 期望服务器返回 JSON
+                    data: JSON.stringify(params),
+                    success: function(data) {
+                        alert('suc...');
+                        //window.location.reload();
+                    }
+                });
+            }
+
+
+
+        });
+
+
+        // 保存目录
+        $('#saveFolder').click(function() {
+            const folderId = $('#folderName').attr('folderId');
+            const folderName = $('#folderName').val();
+            if (!folderName) {
+                alert('请输入目录名称');
+                return;
+            }
+
+            // folders.push({
+            //     id: folderId,
+            //     name: folderName,
+            //     expanded: true,
+            //     requests: []
+            // });
+
+            $folderModal.hide();
+            renderFolderStructure();
+            showNotification(`目录 "${folderName}" 已创建`);
+
+            $.ajax({
+                url: "http://localhost:8089/saveDir",
+                type: 'POST',
+                contentType: 'application/json', // 指定发送数据类型为 JSON
+                dataType: 'json', // 期望服务器返回 JSON
+                data: JSON.stringify({ // 将 JS 对象转为 JSON 字符串
+                    id:parseInt(folderId),
+                    name:folderName
+                }),
+                success: function(data) {
+                    alert('suc...');
+                    window.location.reload();
+                }
+            });
+        });
+
+        // 保存请求
+        $('#saveRequest').click(function() {
+            const requestName = $('#requestName').val();
+            const requestUrl = $('#requestUrl').val();
+            const folderId = $('#parentFolder').val();
+
+            if (!requestName || !requestUrl) {
+                alert('请输入请求名称和URL');
+                return;
+            }
+
+            const newRequest = {
+                id: 'req_' + Date.now(),
+                name: requestName,
+                url: requestUrl,
+                active: false
+            };
+
+            if (folderId) {
+                // 添加到指定目录
+                const folder = folders.find(f => f.id === folderId);
+                if (folder) {
+                    folder.requests.push(newRequest);
+                }
+            } else {
+                // 创建新目录（如果请求在顶级）
+                folders.push({
+                    id: 'folder_' + Date.now(),
+                    name: '未命名目录',
+                    expanded: true,
+                    requests: [newRequest]
+                });
+            }
+
+            $requestModal.hide();
+            renderFolderStructure();
+            showNotification(`请求 "${requestName}" 已添加`);
+            httpSave({ // 将 JS 对象转为 JSON 字符串
+                folderId:parseInt(folderId),
+                name:requestName,
+                addr:requestUrl,
+            })
+            /*$.ajax({
+                url: "http://localhost:8089/save",
+                type: 'POST',
+                async:false,
+                contentType: 'application/json', // 指定发送数据类型为 JSON
+                dataType: 'json', // 期望服务器返回 JSON
+                data: JSON.stringify({ // 将 JS 对象转为 JSON 字符串
+                    folderId:parseInt(folderId),
+                    name:requestName,
+                    addr:requestUrl,
+                }),
+                success: function(data) {
+                    alert('suc...');
+                    //window.location.reload();
+                }
+            });*/
+        });
+
+        // 保存配置
+        $('#saveConfigBtn').click(function() {
+            const requestName = $('#connectionName').val();
+            const requestUrl = $('#wsUrl').val();
+            const folderId = $('#connectionName').attr('folderid');
+            const requestId = $('#connectionName').attr('requestid');
+            const requestContent = $("#messageInput").val();
+
+            if (!requestName || !requestUrl) {
+                alert('请输入请求名称和URL');
+                return;
+            }
+
+            httpSave({ // 将 JS 对象转为 JSON 字符串
+                folderId:parseInt(folderId),
+                id:parseInt(requestId),
+                name:requestName,
+                addr:requestUrl,
+                content:requestContent,
+            })
+            /*$.ajax({
+                url: "http://localhost:8089/save",
+                type: 'POST',
+                async:false,
+                contentType: 'application/json', // 指定发送数据类型为 JSON
+                dataType: 'json', // 期望服务器返回 JSON
+                data: JSON.stringify({ // 将 JS 对象转为 JSON 字符串
+                    folderId:parseInt(folderId),
+                    id:parseInt(requestId),
+                    name:requestName,
+                    addr:requestUrl,
+                    content:requestContent,
+                }),
+                success: function(data) {
+                    alert('suc...')
+                    //window.location.reload();
+                }
+            });*/
+        });
+
+
+        // 加载请求配置
+        function loadRequestConfig(request, folder) {
+            $('#connectionName').attr("folderId", folder.id);
+            $('#connectionName').attr("requestId", request.id);
+            $('#connectionName').val(request.name);
+            $('#wsUrl').val(request.url);
+            $('#protocol').val('');
+            $('#timeout').val('5000');
+            $('#initMessage').val('');
+
+            console.log(request)
+            $('#messageInput').val(request.content);
+
+            // 清空消息历史
+            $('#messageHistory').empty();
+            $emptyMessageState.show();
+        }
+
+        // 显示通知
+        function showNotification(message) {
+            const $notification = $(`
+                    <div class="notification" style="position: fixed; top: 20px; right: 20px; background: var(--primary-color); color: white; padding: 10px 20px; border-radius: 50px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000;">
+                        <i class="fas fa-check-circle"></i> ${message}
+                    </div>
+                `);
+
+            $('body').append($notification);
+            setTimeout(() => {
+                $notification.fadeOut(500, function() {
+                    $(this).remove();
+                });
+            }, 2000);
+        }
+
+        // 添加请求头
+        $('#addHeaderBtn').click(function() {
+            const $newRow = $(`
+                    <div class="form-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" class="form-control" placeholder="键" style="flex: 1;">
+                        <input type="text" class="form-control" placeholder="值" style="flex: 1;">
+                        <button class="action-btn remove-header" style="flex: 0 0 40px;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `);
+
+            $newRow.find('.remove-header').click(function() {
+                $newRow.remove();
+            });
+
+            $('#headersContainer').append($newRow);
+        });
+
+        // 发送消息
+        $('#sendBtn').off('click').click(function() {
+            sendMessage();
+        });
+
+        // 清空消息
+        $('#clearMessages').click(function() {
+            $('#messageHistory').empty();
+            $emptyMessageState.show();
+        });
+
+        // 连接/断开按钮
+        $('#connectBtn').click(function() {
+            connect()
+            $('.status-indicator').addClass('connected');
+            $('#statusText').text('已连接');
+            $('#connectBtn').prop('disabled', true);
+            $('#disconnectBtn').prop('disabled', false);
+
+            // 添加连接成功消息
+            const $message = $(`
+                    <div class="message system">
+                        <div class="message-header">
+                            <span>系统</span>
+                            <span>${new Date().toLocaleTimeString()}</span>
+                        </div>
+                        <div class="message-content">已成功连接到 ${$('#wsUrl').val()}</div>
+                    </div>
+                `);
+
+            $('#messageHistory').append($message);
+            $emptyMessageState.hide();
+        });
+
+        $('#disconnectBtn').click(function() {
+            $('.status-indicator').removeClass('connected');
+            $('#statusText').text('未连接');
+            $('#connectBtn').prop('disabled', false);
+            $('#disconnectBtn').prop('disabled', true);
+
+            // 添加断开连接消息
+            const $message = $(`
+                    <div class="message system">
+                        <div class="message-header">
+                            <span>系统</span>
+                            <span>${new Date().toLocaleTimeString()}</span>
+                        </div>
+                        <div class="message-content">已断开连接</div>
+                    </div>
+                `);
+
+            $('#messageHistory').append($message);
+        });
+
+        // 添加新目录
+        $('#addFolder').click(function() {
+            openFolderModal();
+        });
+
+        // 添加新全局变量
+        $('#addGlobalFeild').click(function() {
+            openGlobalFeildModal();
+        });
+
+        //取消全局变量框
+        $('#cancelGlobalFeild').click(function (){
+            $('#globalFeildModal').hide();
+        })
+
+
+        // 添加新请求
+        $('#addRequestBtn').click(function() {
+            openRequestModal();
+        });
+
+        // 取消模态框
+        $('#cancelFolder, #cancelRequest').click(function() {
+            $folderModal.hide();
+            $requestModal.hide();
+        });
+
+
+        // 输入框回车发送消息
+        $('#messageInput').off('keypress').keypress(function(e) {
+            if (e.which === 13 && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 点击模态框外部关闭模态框
+        $(window).click(function(event) {
+            if (event.target.id === 'historyModal') {
+                $('#historyModal').hide();
+            }
+        });
+
+        // 初始化加载第一个请求
+        if (folders.length > 0 && folders[0].requests.length > 0) {
+            for(i in folders) {
+                for (j in folders[i].requests) {
+                    if (folders[i].requests[j].active == false) {
+                        continue
+                    }
+                    loadRequestConfig(folders[i].requests[j], folders[i]);
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
