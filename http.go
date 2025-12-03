@@ -129,7 +129,7 @@ func ReplaceGlobalFeild(content string) string {
 }
 
 func handleSave(w http.ResponseWriter, r *http.Request) {
-	allowCrossOrigin(w)
+	allowCrossOrigin(w, r)
 	// 仅允许 POST 请求
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -223,22 +223,27 @@ func handleSave(w http.ResponseWriter, r *http.Request) {
 }
 
 // 允许跨域
-func allowCrossOrigin(w http.ResponseWriter) {
+func allowCrossOrigin(w http.ResponseWriter, r *http.Request) {
 	// 1. 核心：设置所有必要的 CORS 头（必须在 w.Write 之前）
 	// 允许所有源（开发环境用 *，生产环境指定具体域名如 "https://xxx.com"）
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	// 允许的请求方法（覆盖常用方法，按需添加）
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	// 允许的请求头（若前端传了自定义头，需在这里添加，如 Token、Content-Type）
+	//允许的请求头（若前端传了自定义头，需在这里添加，如 Token、Content-Type）
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
 	// 允许前端读取的响应头（可选）
 	w.Header().Set("Access-Control-Expose-Headers", "Content-Length")
 	// 预检请求缓存时间（秒，减少 OPTIONS 请求次数）
 	w.Header().Set("Access-Control-Max-Age", "86400")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 }
 
 func handlegetGlobalFeild(w http.ResponseWriter, r *http.Request) {
-	allowCrossOrigin(w)
+	allowCrossOrigin(w, r)
 	// 2. 处理预检请求 OPTIONS：直接返回 204 No Content（无需响应体）
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusNoContent)
@@ -266,7 +271,7 @@ func handlegetGlobalFeild(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlesaveGlobalFeild(w http.ResponseWriter, r *http.Request) {
-	allowCrossOrigin(w)
+	allowCrossOrigin(w, r)
 	// 仅允许 POST 请求
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -380,7 +385,7 @@ type FolderStruct struct {
 
 // 获取目录列表
 func handleGetDirList(w http.ResponseWriter, r *http.Request) {
-	allowCrossOrigin(w)
+	allowCrossOrigin(w, r)
 	// 仅允许 POST 请求
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -450,7 +455,7 @@ func handleGetDirList(w http.ResponseWriter, r *http.Request) {
 
 // 删除请求
 func handleDelRequest(w http.ResponseWriter, r *http.Request) {
-	allowCrossOrigin(w)
+	allowCrossOrigin(w, r)
 	// 仅允许 POST 请求
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -501,7 +506,7 @@ func handleDelRequest(w http.ResponseWriter, r *http.Request) {
 
 // 删除目录
 func handleDelDir(w http.ResponseWriter, r *http.Request) {
-	allowCrossOrigin(w)
+	allowCrossOrigin(w, r)
 	// 仅允许 POST 请求
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
