@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket测试工具 - 二级目录管理-index1</title>
+    <title>WebSocket测试工具 - 二级目录管理222222222222222222-index1</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://github.com/inexorabletash/text-encoding/blob/master/lib/encoding.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -719,7 +719,7 @@
 </head>
 <body>
 <div id="app"></div>
-<script src="./src/main.js" type="module"></script>
+<script src="src/main.js" type="module"></script>
 <script>
     let folders = [];
     let golbalFeilds = {};
@@ -1142,7 +1142,7 @@
         function renderFolderStructure() {
             $collectionList.empty();
 
-            if (folders == null || folders.length === 0) {
+            if (folders.length === 0) {
                 $collectionList.append(`
                         <div class="empty-state" style="padding: 20px;">
                             <i class="fas fa-inbox"></i>
@@ -1665,7 +1665,7 @@
         });
 
         // 初始化加载第一个请求
-        if (folders != null && folders.length > 0 && folders[0].requests.length > 0) {
+        if (folders.length > 0 && folders[0].requests.length > 0) {
             for(i in folders) {
                 for (j in folders[i].requests) {
                     if (folders[i].requests[j].active == false) {

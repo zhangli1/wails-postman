@@ -44,8 +44,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 
 // 添加目录
 func handleSaveDir(w http.ResponseWriter, r *http.Request) {
-	// 关键：设置跨域头
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	allowCrossOrigin(w, r)
 	// 仅允许 POST 请求
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -402,7 +401,8 @@ func handleGetDirList(w http.ResponseWriter, r *http.Request) {
 	retData.Status = 500
 
 	list, err := sqliteDb.NewCollectionsModel().GetList()
-	if len(list) == 0 || err != nil {
+	log.Println("debug: %v %v", list, err)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(retData)
 		return
